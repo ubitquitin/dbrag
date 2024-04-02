@@ -58,22 +58,18 @@ def generate_corpus(cursor, model, corpus_length=100):
     tables = [row[1] for row in cursor.fetchall()]
     s = f"There are {len(tables)} tables in the schema.\n"
     corpus_df.loc[len(corpus_df.index)] = [s]
-    corpus_df['embeddings'] = corpus_df['sentence'].apply(lambda x: get_embed(model, x))
     return corpus_df
 
 
-def semantic_search(user_input, df, model, context_length):
+def semantic_search(user_input, corpus_df, model, context_length):
     
+    corpus_embeddings = model.encode(corpus_df['sentence'].tolist(), convert_to_tensor=True)
     input_embed = model.encode(user_input)
-    df['cos_dists'] = df.embeddings.apply(lambda x: util.pytorch_cos_sim(input_embed, x))
+    
+    hits = util.semantic_search(input_embed, corpus_embeddings, top_k=context_length)
+    context_string = ';'.join([i for i in hits])
 
-    best_inds = df.cos_dists.nlargest(context_length).index.values
-
-    #get text of most similar embedding/
-    most_sim_df = df.sentence.iloc[best_inds]
-    most_similar_text = '; '.join([i for i in most_sim_df.values])
-    context_string = most_similar_text[1:]
-    return context_string
+    return context_string[1:]
 
 
 def query(payload):
