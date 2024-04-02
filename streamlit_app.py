@@ -4,7 +4,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import SQLContext
 import pandas as pd
 import torch
-from transformers import AutoModelForQuestionAnswering, AutoTokenizer, pipeline
+from sentence_transformers import SentenceTransformer, util
 
 import requests
 import os
@@ -47,45 +47,25 @@ def connect_to_databricks(jdbc_url, user, password, driver):
     return spark, sql_context
 
 
-def get_embed(text):
-    tokenizer = AutoTokenizer.from_pretrained("deepset/roberta-base-squad2")
-    model = AutoModelForQuestionAnswering.from_pretrained("deepset/roberta-base-squad2")
+def get_embed(model, text):
+    
+    return model.encode(text)
 
-    # Tokenize input text
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
-    
-    # Forward pass through the model
-    with torch.no_grad():
-        outputs = model(**inputs)
-    
-    # Get the embeddings from the model output
-    embeddings = outputs.last_hidden_state
-    
-    return embeddings
-
-def generate_corpus(cursor, corpus_length=100):
-    corpus_df = pd.DataFrame(columns=['sentence', 'embedding'])
+def generate_corpus(cursor, model, corpus_length=100):
+    corpus_df = pd.DataFrame(columns=['sentence'])
     
     cursor.execute("SHOW TABLES")
     tables = [row[1] for row in cursor.fetchall()]
     s = f"There are {len(tables)} tables in the schema.\n"
-    corpus_df.loc[len(corpus_df.index)] = [s, get_embed(s)]
+    corpus_df.loc[len(corpus_df.index)] = [s]
+    corpus_df['embeddings'] = corpus_df['sentence'].apply(lambda x: get_embed(model, x))
     return corpus_df
 
 
-#Helper function for embedding similarity
-def cosine_similarity(a, b):
-  dot_product = sum(x * y for x, y in zip(a, b))
-  magnitude_a = sum(x * x for x in a)**0.5
-  magnitude_b = sum(x * x for x in b)**0.5
-  return dot_product / (magnitude_a * magnitude_b)
-
-
-def semantic_search(user_input, df, context_length):
+def semantic_search(user_input, df, model, context_length):
     
-    df['cos_dists'] = df.embedding.apply(lambda x: 1 - cosine_similarity(
-    list(map(float,
-             x.strip('][').split(', '))), user_input))
+    input_embed = model.encode(user_input)
+    df['cos_dists'] = df.embeddings.apply(lambda x: util.pytorch_cos_sim(input_embed, x))
 
     best_inds = df.cos_dists.nlargest(context_length).index.values
 
@@ -123,13 +103,15 @@ def main():
 
             # Create document corpus and embeddings
             cursor = conn.cursor()
-            corpus_df = generate_corpus(cursor)
+            model = SentenceTransformer('distilbert-base-nli-mean-tokens')
+            corpus_df = generate_corpus(cursor, model)
+            
             
             # Q&A
             user_input = st.text_input("Ask a question about your data:")
             
             output = query({
-                "context": semantic_search(user_input, corpus_df, 1),
+                "context": semantic_search(user_input, corpus_df, model, 1),
                 "question": f'{user_input}',
                 "parameters": {}
             })
