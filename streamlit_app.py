@@ -32,7 +32,7 @@ def connect_to_databricks(jdbc_url, user, password, driver):
 
 # Main function to display database information
 def main():
-    st.title("Database Information")
+    st.title("dRAG - A Database Informed Chatbot :dragon_face:")
 
     # Database selection
     db_option = st.radio("Select Database:", ("Snowflake", "Databricks"))
