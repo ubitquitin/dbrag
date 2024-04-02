@@ -63,8 +63,8 @@ def get_embed(text):
     
     return embeddings
 
-def generate_corpus(cursor, filename='corpus.csv', corpus_length=100):
-    corpus_df = pd.read_csv(filename, sep='\n', names=['sentence', 'embedding'] ,header=False)
+def generate_corpus(cursor, corpus_length=100):
+    corpus_df = pd.DataFrame(columns=['sentence', 'embedding'])
     
     cursor.execute("SHOW TABLES")
     tables = [row[1] for row in cursor.fetchall()]
