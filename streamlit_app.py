@@ -90,8 +90,8 @@ def query(payload):
 # Main function to display database information
 def main():
     st.title("dRAG - A Database Informed Chatbot :dragon:")
-    model = None
-    corpus_df = None
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    cursor = None
     
     # Database selection
     db_option = st.radio("Select Database:", ("Snowflake", "Databricks"))
@@ -111,19 +111,9 @@ def main():
 
             # Create document corpus and embeddings
             cursor = conn.cursor()
-            corpus_df = generate_corpus(cursor)
-            model = SentenceTransformer("all-MiniLM-L6-v2")
-
             
-            # cursor.execute("SHOW TABLES")
-            # tables = [row[1] for row in cursor.fetchall()]
-            # for table in tables:
-            #     st.write(f"## Table: {table}")
-            #     cursor.execute(f"DESCRIBE TABLE {table}")
-            #     columns = cursor.fetchall()
-            #     for column in columns:
-            #         st.write(f"- {column[0]} | {column[1]}")
-
+            
+            
     elif db_option == "Databricks":
         st.sidebar.subheader("Databricks Connection Configuration")
         jdbc_url = st.sidebar.text_input("JDBC URL")
@@ -148,15 +138,17 @@ def main():
     
                 
     # Q&A
-    user_input = st.text_input("Ask a question about your data:")
+    if cursor:
+        corpus_df = generate_corpus(cursor)
+        user_input = st.text_input("Ask a question about your data:")
         
-    output = query({
-        "context": semantic_search(model, user_input, corpus_df, 1),
-        "question": f'{user_input}',
-        "parameters": {}
-    })
-    
-    st.text(f':dragon_face:: {output}')
+        output = query({
+            "context": semantic_search(model, user_input, corpus_df, 1),
+            "question": f'{user_input}',
+            "parameters": {}
+        })
+        
+        st.text(f':dragon_face:: {output}')
 
 # Run the main function
 if __name__ == "__main__":
