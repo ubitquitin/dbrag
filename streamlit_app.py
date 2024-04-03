@@ -128,7 +128,7 @@ def main():
                     
     #initialize chat message history session state.
     if "messages" not in st.session_state:
-        st.session_state.messages = []
+        st.session_state.messages = [{"role": "assistant", "content": ':dragon_face: Hello!' }]
     
     # Display chat messages
     for message in st.session_state.messages:
