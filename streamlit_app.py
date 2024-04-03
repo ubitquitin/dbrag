@@ -68,9 +68,9 @@ def semantic_search(user_input, corpus_df, model, context_length):
     
     hits = util.semantic_search(input_embed, corpus_embeddings, top_k=context_length)
     hits = hits[0]
+    print(hits)
     context_string = ';'.join([hit for hit in hits])
-    st.write('context: ', context_string[1:])
-
+    print('ct: ', context_string[1:])
     return context_string[1:]
 
 
