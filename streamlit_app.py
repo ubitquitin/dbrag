@@ -143,7 +143,7 @@ def main():
         # Display assitant message in chat message container
         # Generate a new response if last message is not from assistant
         if st.session_state.messages[-1]["role"] != "assistant":
-            with st.chat_message("assistant", avatar=":dragon_face:"):
+            with st.chat_message("assistant", avatar="🐲"):
                 with st.spinner("Thinking..."):
                     output = query({
                         'inputs': {
