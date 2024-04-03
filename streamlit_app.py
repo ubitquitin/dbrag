@@ -151,7 +151,8 @@ def main():
                         "question": f'{prompt}'
                     }
                 }) 
-                st.write(f':dragon_face:: {output}') 
+                response = output['answer'] 
+                st.write(f':dragon_face:: {response}') 
         message = {"role": "assistant", "content": output}
         # Add assistant response to chat history
         st.session_state.messages.append(message)
