@@ -90,6 +90,8 @@ def query(payload):
 # Main function to display database information
 def main():
     st.title("dRAG - A Database Informed Chatbot :dragon:")
+    global model
+    global corpus_df
 
     # Database selection
     db_option = st.radio("Select Database:", ("Snowflake", "Databricks"))
@@ -109,9 +111,7 @@ def main():
 
             # Create document corpus and embeddings
             cursor = conn.cursor()
-            global corpus_df
             corpus_df = generate_corpus(cursor)
-            global model
             model = SentenceTransformer("all-MiniLM-L6-v2")
 
             
