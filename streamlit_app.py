@@ -128,7 +128,7 @@ def main():
                     
     #initialize chat message history session state.
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": ''}]
+        st.session_state.messages = []
     
     # Display chat messages
     for message in st.session_state.messages:
@@ -141,21 +141,21 @@ def main():
     with st.chat_message("user"):
         st.markdown(prompt)
     # Display assitant message in chat message container
-    # Generate a new response if last message is not from assistant
-    if st.session_state.messages[-1]["role"] != "assistant":
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                output = query({
-                    'inputs': {
-                        "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
-                        "question": f'{prompt}'
-                    }
-                }) 
-                response = output['answer'] 
-                st.write(f':dragon_face:: {response}') 
-        message = {"role": "assistant", "content": output}
-        # Add assistant response to chat history
-        st.session_state.messages.append(message)
+        # Generate a new response if last message is not from assistant
+        if st.session_state.messages[-1]["role"] != "assistant":
+            with st.chat_message("assistant"):
+                with st.spinner("Thinking..."):
+                    output = query({
+                        'inputs': {
+                            "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
+                            "question": f'{prompt}'
+                        }
+                    }) 
+                    response = output['answer'] 
+                    st.write(f':dragon_face:: {response}') 
+            message = {"role": "assistant", "content": output}
+            # Add assistant response to chat history
+            st.session_state.messages.append(message)
         
 
 # Run the main function
