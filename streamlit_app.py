@@ -51,12 +51,16 @@ def connect_to_databricks(jdbc_url, user, password, driver):
 
 
 def generate_corpus(cursor, corpus_length=100):
-    corpus_df = pd.DataFrame(columns=['sentence'])
     
+    text_data = []
     cursor.execute("SHOW TABLES")
     tables = [row[1] for row in cursor.fetchall()]
-    s = f"There are {len(tables)} tables in the schema.\n"
-    corpus_df.loc[len(corpus_df.index)] = [s]
+    text_data.append(f"There are {len(tables)} tables in the schema.\n")
+    table_names = " ".join([i for i in tables])
+    text_data.append(f"The names of the tables are{table_names}")
+    #...
+    
+    corpus_df = pd.DataFrame(data=text_data, columns=['sentence'])
     return corpus_df
 
 
