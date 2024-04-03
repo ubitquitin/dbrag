@@ -123,7 +123,7 @@ def main():
                 "parameters": {}
             })
             
-            st.write(f':dragon_face:: {output}')
+            st.text(f':dragon_face:: {output}')
             
             # cursor.execute("SHOW TABLES")
             # tables = [row[1] for row in cursor.fetchall()]
