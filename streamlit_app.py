@@ -142,6 +142,7 @@ def main():
         st.markdown(prompt)
     # Display assitant message in chat message container
         # Generate a new response if last message is not from assistant
+    if st.session_state.messages:
         if st.session_state.messages[-1]["role"] != "assistant":
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
