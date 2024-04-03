@@ -91,7 +91,7 @@ def query(payload):
 def main():
     st.title("dRAG - A Database Informed Chatbot :dragon:")
     model = SentenceTransformer("all-MiniLM-L6-v2")
-    cursor = None
+    st.session_state.embedding_model = model
     
     # Database selection
     db_option = st.radio("Select Database:", ("Snowflake", "Databricks"))
@@ -111,7 +111,8 @@ def main():
 
             # Create document corpus and embeddings
             cursor = conn.cursor()
-            
+            corpus_df = generate_corpus(cursor)  
+            st.session_state.corpus = corpus_df
             
             
     elif db_option == "Databricks":
@@ -135,20 +136,35 @@ def main():
                 for row in columns.collect():
                     st.write(f"- {row['col_name']} | {row['data_type']}")
                     
+    #initialize chat message history session state.
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
     
-                
-    # Q&A
-    if cursor:
-        corpus_df = generate_corpus(cursor)
-        user_input = st.text_input("Ask a question about your data:")
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+    
+    if prompt := st.chat_input("Ask a question about your data:"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+    # Display user message in chat message container
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    # Display assitant message in chat message container
+    # Generate a new response if last message is not from assistant
+    if st.session_state.messages[-1]["role"] != "assistant":
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                output = query({
+                    "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
+                    "question": f'{prompt}',
+                    "parameters": {}
+                }) 
+                st.write(f':dragon_face:: {output}') 
+        message = {"role": "assistant", "content": output}
+        # Add assistant response to chat history
+        st.session_state.messages.append(message)
         
-        output = query({
-            "context": semantic_search(model, user_input, corpus_df, 1),
-            "question": f'{user_input}',
-            "parameters": {}
-        })
-        
-        st.text(f':dragon_face:: {output}')
 
 # Run the main function
 if __name__ == "__main__":
