@@ -21,11 +21,6 @@ headers = {
 	"Content-Type": "application/json" 
 }
 
-# embed_headers = {
-# 	"Accept" : "application/json",
-# 	"Authorization": os.getenv('EMBED_API_TOKEN'),
-# 	"Content-Type": "application/json" 
-# }
 
 # Function to connect to Snowflake database
 def connect_to_snowflake(user, password, account, database, warehouse, schema):
@@ -53,11 +48,6 @@ def connect_to_databricks(jdbc_url, user, password, driver):
 
     sql_context = SQLContext(spark)
     return spark, sql_context
-
-
-# def get_embed(payload):
-#     response = requests.post(EMBED_URL, headers=embed_headers, json=payload)
-#     return response.json()
 
 
 def generate_corpus(cursor, corpus_length=100):
@@ -156,9 +146,11 @@ def main():
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 output = query({
-                    "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
-                    "question": f'{prompt}',
-                    "parameters": {}
+                    'inputs': {
+                        "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
+                        "question": f'{prompt}',
+                        "parameters": {}
+                    }
                 }) 
                 st.write(f':dragon_face:: {output}') 
         message = {"role": "assistant", "content": output}
