@@ -128,12 +128,13 @@ def main():
                     
     #initialize chat message history session state.
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": ':dragon_face: Hello!' }]
+        st.session_state.messages = []
     
     # Display chat messages
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
+    if st.session_state.messages:
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
     
     if prompt := st.chat_input("Ask a question about your data:"):
         st.session_state.messages.append({"role": "user", "content": prompt})
