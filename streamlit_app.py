@@ -143,7 +143,7 @@ def main():
         # Display assitant message in chat message container
         # Generate a new response if last message is not from assistant
         if st.session_state.messages[-1]["role"] != "assistant":
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar=":dragon_face:"):
                 with st.spinner("Thinking..."):
                     output = query({
                         'inputs': {
@@ -152,7 +152,7 @@ def main():
                         }
                     }) 
                     response = output['answer'] 
-                    st.write(f':dragon_face:: {response}') 
+                    st.write(f'{response}') 
             message = {"role": "assistant", "content": output}
             # Add assistant response to chat history
             st.session_state.messages.append(message)
