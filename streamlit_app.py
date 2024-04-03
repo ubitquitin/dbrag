@@ -115,15 +115,35 @@ def main():
             model = SentenceTransformer("all-MiniLM-L6-v2")
             
             # Q&A
-            user_input = st.text_input("Ask a question about your data:")
+            # Initialize chat history
+            if "messages" not in st.session_state:
+                st.session_state.messages = []
+
+            # Display chat messages from history on app rerun
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            # Accept user input
+            if prompt := st.chat_input("How many tables are in my database?"):
+                # Add user message to chat history
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                # Display user message in chat message container
+                with st.chat_message("user"):
+                    st.markdown(prompt)
             
-            output = query({
-                "context": semantic_search(model, user_input, corpus_df, 1),
-                "question": f'{user_input}',
-                "parameters": {}
-            })
+                with st.chat_message(":dragon_face:"):
+                    output = query({
+                        "context": semantic_search(model, prompt, corpus_df, 1),
+                        "question": f'{prompt}',
+                        "parameters": {}
+                    })
+                response = st.write_stream(output)
+            st.session_state.messages.append({"role": ":dragon_face:", "content": response})
+                        
             
-            st.text(f':dragon_face:: {output}')
+            
+            #st.text(f':dragon_face:: {output}')
             
             # cursor.execute("SHOW TABLES")
             # tables = [row[1] for row in cursor.fetchall()]
