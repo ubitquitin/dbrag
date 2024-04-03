@@ -89,6 +89,7 @@ def query(payload):
 
 # Main function to display database information
 def main():
+    model = SentenceTransformer("all-MiniLM-L6-v2")
     st.title("dRAG - A Database Informed Chatbot :dragon:")
 
     # Database selection
@@ -111,8 +112,6 @@ def main():
             cursor = conn.cursor()
             
             corpus_df = generate_corpus(cursor)
-            
-            model = SentenceTransformer("all-MiniLM-L6-v2")
             
             # cursor.execute("SHOW TABLES")
             # tables = [row[1] for row in cursor.fetchall()]
