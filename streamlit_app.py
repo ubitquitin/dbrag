@@ -12,12 +12,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_URL = os.getenv('')
+API_URL = os.getenv('HF_API_URL')
+#EMBED_URL = os.getenv('EMBED_URL')
+
 headers = {
 	"Accept" : "application/json",
 	"Authorization": os.getenv('HF_API_TOKEN'),
 	"Content-Type": "application/json" 
 }
+
+# embed_headers = {
+# 	"Accept" : "application/json",
+# 	"Authorization": os.getenv('EMBED_API_TOKEN'),
+# 	"Content-Type": "application/json" 
+# }
 
 # Function to connect to Snowflake database
 def connect_to_snowflake(user, password, account, database, warehouse, schema):
@@ -47,11 +55,12 @@ def connect_to_databricks(jdbc_url, user, password, driver):
     return spark, sql_context
 
 
-def get_embed(model, text):
-    
-    return model.encode(text)
+# def get_embed(payload):
+#     response = requests.post(EMBED_URL, headers=embed_headers, json=payload)
+#     return response.json()
 
-def generate_corpus(cursor, model, corpus_length=100):
+
+def generate_corpus(cursor, corpus_length=100):
     corpus_df = pd.DataFrame(columns=['sentence'])
     
     cursor.execute("SHOW TABLES")
@@ -61,17 +70,16 @@ def generate_corpus(cursor, model, corpus_length=100):
     return corpus_df
 
 
-def semantic_search(user_input, corpus_df, model, context_length):
+def semantic_search(model, user_input, corpus_df, context_length):
     
     corpus_embeddings = model.encode(corpus_df['sentence'].tolist(), convert_to_tensor=True)
     input_embed = model.encode(user_input)
     
     hits = util.semantic_search(input_embed, corpus_embeddings, top_k=context_length)
     hits = hits[0]
-    print(hits)
-    context_string = ';'.join([hit for hit in hits])
-    print('ct: ', context_string[1:])
-    return context_string[1:]
+
+    context_string = ';'.join([corpus_df['sentence'].iloc[hit['corpus_id']] for hit in hits])
+    return context_string
 
 
 def query(payload):
@@ -81,7 +89,7 @@ def query(payload):
 
 # Main function to display database information
 def main():
-    st.title("dRAG - A Database Informed Chatbot :dragon_face:")
+    st.title("dRAG - A Database Informed Chatbot :dragon:")
 
     # Database selection
     db_option = st.radio("Select Database:", ("Snowflake", "Databricks"))
@@ -101,15 +109,16 @@ def main():
 
             # Create document corpus and embeddings
             cursor = conn.cursor()
-            model = SentenceTransformer('distilbert-base-nli-mean-tokens')
-            corpus_df = generate_corpus(cursor, model)
             
+            corpus_df = generate_corpus(cursor)
+            
+            model = SentenceTransformer("all-MiniLM-L6-v2")
             
             # Q&A
             user_input = st.text_input("Ask a question about your data:")
             
             output = query({
-                "context": semantic_search(user_input, corpus_df, model, 1),
+                "context": semantic_search(model, user_input, corpus_df, 1),
                 "question": f'{user_input}',
                 "parameters": {}
             })
