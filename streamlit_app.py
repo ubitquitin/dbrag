@@ -90,9 +90,9 @@ def query(payload):
 # Main function to display database information
 def main():
     st.title("dRAG - A Database Informed Chatbot :dragon:")
-    global model
-    global corpus_df
-
+    model = None
+    corpus_df = None
+    
     # Database selection
     db_option = st.radio("Select Database:", ("Snowflake", "Databricks"))
 
