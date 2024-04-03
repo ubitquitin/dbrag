@@ -148,8 +148,7 @@ def main():
                 output = query({
                     'inputs': {
                         "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
-                        "question": f'{prompt}',
-                        "parameters": {}
+                        "question": f'{prompt}'
                     }
                 }) 
                 st.write(f':dragon_face:: {output}') 
