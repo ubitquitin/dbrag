@@ -64,13 +64,14 @@ def generate_corpus(cursor, corpus_length=100):
         st.session_state.gensql_str = st.session_state.gensql_str + f'{table} '
         num_cols = 0
         cursor.execute(f"DESCRIBE {table}")
+        results = cursor.fetchall()
         pk = ''
         
-        while (cursor.fetchone()):
+        for row in results:
             num_cols += 1
-            col_name = cursor.getString(0)
-            col_type = cursor.getString(1)
-            is_primary = cursor.getString(6)
+            col_name = row[0]
+            col_type = row[1]
+            is_primary = row[6]
             if is_primary == 'Y':
                 pk = col_name
 
