@@ -5,7 +5,6 @@ from pyspark.sql import SQLContext
 import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer, util
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 import requests
 import os
@@ -117,10 +116,6 @@ def main():
     st.session_state.embedding_model = model
     st.session_state.gensql_str = ''
     
-    sql2text_model_path = 'gaussalgo/T5-LM-Large-text2sql-spider'
-    sql2text_model = AutoModelForSeq2SeqLM.from_pretrained(sql2text_model_path)
-    sql2text_tokenizer = AutoTokenizer.from_pretrained(sql2text_model_path)
-    
     # Database selection
     db_option = st.radio("Select Database:", ("Snowflake", "Databricks"))
 
@@ -185,22 +180,15 @@ def main():
                 #Text2SQL
                 with st.chat_message("assistant", avatar="🐲"):
                     with st.spinner("Thinking..."):
-                        # output = query_text2sql({
-                        #     'inputs': {
-                        #         "Schema": st.session_state.gensql_str,
-                        #         "Question": f'{prompt[4:]}'
-                        #     }
-                        # }) 
-                        
-                        input_text = " ".join(["Question: ",prompt[4:], "Schema:", st.session_state.gensql_str])
-                        model_inputs = sql2text_tokenizer(input_text, return_tensors="pt")
-                        outputs = sql2text_model.generate(**model_inputs, max_length=512)
-
-                        response = sql2text_tokenizer.batch_decode(outputs, skip_special_tokens=True)
-                        #response = output['answer'] 
+                        output = query_text2sql({
+                            'inputs': {
+                                "Schema": st.session_state.gensql_str,
+                                "Question": f'{prompt[4:]}'
+                            }
+                        }) 
+                        response = output['answer'] 
                         st.write(f'{response}') 
                 message = {"role": "assistant", "content": response}
-                
             else:
                 with st.chat_message("assistant", avatar="🐲"):
                     with st.spinner("Thinking..."):
