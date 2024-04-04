@@ -187,7 +187,7 @@ def main():
                                 "Question": f'{prompt[4:]}'
                             '''
                         }) 
-                        response = output['generated_text'].split('\n')[-1] 
+                        response = output[0]['generated_text'].split('\n')[-1] 
                         st.write(f'I am running this SQL statement in response to your query: \n {response}') 
                         st.session_state.cursor.execute(response)
                         st.write(str(st.session_state.cursor.fetchall()))
