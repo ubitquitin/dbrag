@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_URL = os.getenv('HF_API_URL')
-#EMBED_URL = os.getenv('EMBED_URL')
+HF_T2S_URL = os.getenv('HF_T2S_URL')
 
 headers = {
 	"Accept" : "application/json",
@@ -52,14 +52,36 @@ def connect_to_databricks(jdbc_url, user, password, driver):
 
 def generate_corpus(cursor, corpus_length=100):
     
+    st.session_state.gensql_str = ''
     text_data = []
     cursor.execute("SHOW TABLES")
     tables = [row[1] for row in cursor.fetchall()]
     text_data.append(f"There are {len(tables)} tables in the schema.\n")
     table_names = " ".join([i for i in tables])
-    text_data.append(f"The names of the tables are{table_names}")
-    #...
-    
+    text_data.append(f"The names of the tables are {table_names}")
+
+    for table in tables:
+        st.session_state.gensql_str = st.session_state.gensql_str + f'{table} '
+        num_cols = 0
+        cursor.execute(f"DESCRIBE {table}")
+        pk = ''
+        
+        while (cursor.next):
+            num_cols += 1
+            col_name = cursor.getString(0)
+            col_type = cursor.getString(1)
+            is_primary = cursor.getString(6)
+            if is_primary == 'Y':
+                pk = col_name
+
+            text_data.append(f"Table {table} has a column {col_name} of type {col_type}.") 
+            st.session_state.gensql_str = st.session_state.gensql_str + f'{col_name} {col_type},' 
+                 
+        st.session_state.gensql_str = st.session_state.gensql_str + f' primary_key: {pk} [SEP]' 
+        text_data.append(f"Table {table} has {num_cols} columns.")
+        if len(pk) > 0:
+            text_data.append(f"{pk} is the primary key of table {table}.")
+            
     corpus_df = pd.DataFrame(data=text_data, columns=['sentence'])
     return corpus_df
 
@@ -75,10 +97,15 @@ def semantic_search(model, user_input, corpus_df, context_length):
     context_string = ';'.join([corpus_df['sentence'].iloc[hit['corpus_id']] for hit in hits])
     return context_string
 
-
+    
 def query(payload):
 	response = requests.post(os.getenv('HF_API_URL'), headers=headers, json=payload)
 	return response.json()
+
+
+def query_text2sql(payload):
+    response = requests.post(os.getenv('HF_T2S_URL'), headers=headers, json=payload)
+    return response.json()
 
 
 # Main function to display database information
@@ -86,6 +113,7 @@ def main():
     st.title("dRAG - A Database Informed Chatbot :dragon:")
     model = SentenceTransformer("all-MiniLM-L6-v2")
     st.session_state.embedding_model = model
+    st.session_state.gensql_str = ''
     
     # Database selection
     db_option = st.radio("Select Database:", ("Snowflake", "Databricks"))
@@ -147,17 +175,31 @@ def main():
         # Display assitant message in chat message container
         # Generate a new response if last message is not from assistant
         if st.session_state.messages[-1]["role"] != "assistant":
-            with st.chat_message("assistant", avatar="🐲"):
-                with st.spinner("Thinking..."):
-                    output = query({
-                        'inputs': {
-                            "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
-                            "question": f'{prompt}'
-                        }
-                    }) 
-                    response = output['answer'] 
-                    st.write(f'{response}') 
-            message = {"role": "assistant", "content": output}
+            if 'SQL' in prompt:
+                #Text2SQL
+                with st.chat_message("assistant", avatar="🐲"):
+                    with st.spinner("Thinking..."):
+                        output = query_text2sql({
+                            'inputs': {
+                                "Schema": st.session_state.gensql_str,
+                                "Question": f'{prompt}'
+                            }
+                        }) 
+                        response = output['answer'] 
+                        st.write(f'{response}') 
+                message = {"role": "assistant", "content": response}
+            else:
+                with st.chat_message("assistant", avatar="🐲"):
+                    with st.spinner("Thinking..."):
+                        output = query({
+                            'inputs': {
+                                "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
+                                "question": f'{prompt}'
+                            }
+                        }) 
+                        response = output['answer'] 
+                        st.write(f'{response}') 
+                message = {"role": "assistant", "content": response}
             # Add assistant response to chat history
             st.session_state.messages.append(message)
         
