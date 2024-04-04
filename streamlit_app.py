@@ -181,10 +181,10 @@ def main():
                 with st.chat_message("assistant", avatar="🐲"):
                     with st.spinner("Thinking..."):
                         output = query_text2sql({
-                            'inputs': {
-                                "Schema": st.session_state.gensql_str,
+                            'inputs': f'''
+                                "Schema": {st.session_state.gensql_str},
                                 "Question": f'{prompt[4:]}'
-                            }
+                            '''
                         }) 
                         response = output['answer'] 
                         st.write(f'{response}') 
