@@ -66,7 +66,7 @@ def generate_corpus(cursor, corpus_length=100):
         cursor.execute(f"DESCRIBE {table}")
         pk = ''
         
-        while (cursor.next):
+        while (cursor.fetchone()):
             num_cols += 1
             col_name = cursor.getString(0)
             col_type = cursor.getString(1)
