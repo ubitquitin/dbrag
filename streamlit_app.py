@@ -138,6 +138,16 @@ def main():
             st.session_state.cursor = cursor
             st.session_state.corpus = corpus_df
             
+            # Wake up huggingface endpoints
+            query({
+                    'inputs': {"question": 'wake up?'}
+                })
+            
+            query_text2sql({
+                            'inputs': 'Wake up!'
+                        }) 
+            
+            
             
     elif db_option == "Databricks":
         st.sidebar.subheader("Databricks Connection Configuration")
