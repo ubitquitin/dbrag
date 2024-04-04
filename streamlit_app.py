@@ -176,14 +176,14 @@ def main():
         # Display assitant message in chat message container
         # Generate a new response if last message is not from assistant
         if st.session_state.messages[-1]["role"] != "assistant":
-            if 'SQL' in prompt:
+            if '!sql' in prompt.lower():
                 #Text2SQL
                 with st.chat_message("assistant", avatar="🐲"):
                     with st.spinner("Thinking..."):
                         output = query_text2sql({
                             'inputs': {
                                 "Schema": st.session_state.gensql_str,
-                                "Question": f'{prompt}'
+                                "Question": f'{prompt[4:]}'
                             }
                         }) 
                         response = output['answer'] 
