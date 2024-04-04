@@ -135,6 +135,7 @@ def main():
             # Create document corpus and embeddings
             cursor = conn.cursor()
             corpus_df = generate_corpus(cursor)  
+            st.session_state.cursor = cursor
             st.session_state.corpus = corpus_df
             
             
@@ -186,8 +187,10 @@ def main():
                                 "Question": f'{prompt[4:]}'
                             '''
                         }) 
-                        response = output['answer'] 
-                        st.write(f'{response}') 
+                        response = output['generated_text'].split('\n')[-1] 
+                        st.write(f'I am running this SQL statement in response to your query: \n {response}') 
+                        st.session_state.cursor.execute(response)
+                        st.write(str(st.session_state.cursor.fetchall()))
                 message = {"role": "assistant", "content": response}
             else:
                 with st.chat_message("assistant", avatar="🐲"):
