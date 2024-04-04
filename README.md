@@ -1,7 +1,8 @@
 # dRAG 🐲
 [A chatbot that knows about your specific database!](https://datarag.streamlit.app/)
 
-![drag cover imag](https://github.com/ubitquitin/dbrag/assets/14205051/bdc22561-b1dd-4ef9-9586-f008a2326342)
+![drag cover imag](https://github.com/ubitquitin/dbrag/assets/14205051/daeb7aca-17bb-42fb-9a73-2ab3c15bfbd4)
+
 
 dRAG uses retrieval augmented generation (RAG) to prompt-inject information about your database when generating responses to your questions!
 When you connect to a Snowflake or Databricks Schema using dRAG, it runs a few metadata level queries (low/no cost) to fetch information about the schema structure.
