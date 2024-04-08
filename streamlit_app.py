@@ -13,7 +13,7 @@ from openai import OpenAI
 
 load_dotenv()
 
-API_URL = os.getenv('HF_API_URL')
+#API_URL = os.getenv('HF_API_URL')
 HF_T2S_URL = os.getenv('HF_T2S_URL')
 
 headers = {
@@ -100,9 +100,9 @@ def semantic_search(model, user_input, corpus_df, context_length):
     return context_string
 
     
-def query(payload):
-	response = requests.post(os.getenv('HF_API_URL'), headers=headers, json=payload)
-	return response.json()
+# def query(payload):
+# 	response = requests.post(os.getenv('HF_API_URL'), headers=headers, json=payload)
+# 	return response.json()
 
 
 def query_text2sql(payload):
@@ -140,9 +140,9 @@ def main():
             st.session_state.corpus = corpus_df
             
             # Wake up huggingface endpoints
-            query({
-                    'inputs': {"question": 'wake up?'}
-                })
+            # query({
+            #         'inputs': {"question": 'wake up?'}
+            #     })
             
             query_text2sql({
                             'inputs': 'Wake up!'
