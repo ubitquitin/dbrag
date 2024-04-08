@@ -9,6 +9,7 @@ from sentence_transformers import SentenceTransformer, util
 import requests
 import os
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
@@ -205,13 +206,22 @@ def main():
             else:
                 with st.chat_message("assistant", avatar="🐲"):
                     with st.spinner("Thinking..."):
-                        output = query({
-                            'inputs': {
-                                "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
-                                "question": f'{prompt}'
-                            }
-                        }) 
-                        response = output['answer'] 
+                        context = semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1)
+                        injected_prompt_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:-1]]
+                        injected_prompt_messages.append({"role": "user", "content": f"Given {context}, {prompt}"})
+                        r = OpenAI().chat.completions.create(
+                            messages=injected_prompt_messages, #get all but user's prompt
+                            model="gpt-3.5-turbo",
+                        )
+                        response = r.choices[0].message.content
+                        
+                        # output = query({
+                        #     'inputs': {
+                        #         "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
+                        #         "question": f'{prompt}'
+                        #     }
+                        # }) 
+                        #response = output['answer'] 
                         st.write(f'{response}') 
                 message = {"role": "assistant", "content": response}
             # Add assistant response to chat history
