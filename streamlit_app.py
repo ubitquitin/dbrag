@@ -1,7 +1,6 @@
 import streamlit as st
 import snowflake.connector
-from pyspark.sql import SparkSession
-from pyspark.sql import SQLContext
+from databricks import sql
 import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer, util
@@ -25,6 +24,7 @@ headers = {
 
 # Function to connect to Snowflake database
 def connect_to_snowflake(user, password, account, database, warehouse, schema):
+    
     conn = snowflake.connector.connect(
         user=user,
         password=password,
@@ -36,19 +36,14 @@ def connect_to_snowflake(user, password, account, database, warehouse, schema):
     return conn
 
 # Function to connect to Databricks database
-def connect_to_databricks(jdbc_url, user, password, driver):
-    spark = SparkSession.builder \
-        .appName("Databricks Streamlit App") \
-        .config("spark.driver.extraClassPath", driver) \
-        .getOrCreate()
-
-    properties = {
-        "user": user,
-        "password": password
-    }
-
-    sql_context = SQLContext(spark)
-    return spark, sql_context
+def connect_to_databricks(hostname, http_path, access_token):
+    
+    conn = sql.connect(
+        server_hostname = hostname,
+        http_path = http_path,
+        access_token = access_token
+    )
+    return conn
 
 
 def generate_corpus(cursor, corpus_length=100):
@@ -152,24 +147,29 @@ def main():
             
     elif db_option == "Databricks":
         st.sidebar.subheader("Databricks Connection Configuration")
-        jdbc_url = st.sidebar.text_input("JDBC URL")
-        user = st.sidebar.text_input("User")
-        password = st.sidebar.text_input("Password", type="password")
-        driver = st.sidebar.text_input("JDBC Driver Class Name")
+        hostname = st.sidebar.text_input("JDBC URL")
+        http_path = st.sidebar.text_input("HTTP Path")
+        access_token = st.sidebar.text_input("Access Token", type="password")
 
         if st.sidebar.button("Connect"):
-            spark, sql_context = connect_to_databricks(jdbc_url, user, password, driver)
+            conn = connect_to_databricks(hostname, http_path, access_token)
             st.success("Connected to Databricks")
 
-            # Fetch and display tables and columns
-            tables = sql_context.read.jdbc(jdbc_url, "SHOW TABLES", properties={"user": user, "password": password})
-            table_names = [row['tableName'] for row in tables.collect()]
-
-            for table in table_names:
-                st.write(f"## Table: {table}")
-                columns = sql_context.read.jdbc(jdbc_url, f"DESCRIBE TABLE {table}", properties={"user": user, "password": password})
-                for row in columns.collect():
-                    st.write(f"- {row['col_name']} | {row['data_type']}")
+            # Create document corpus and embeddings
+            cursor = conn.cursor()
+            st.write(cursor.execute("Select * from hive_metastore.default.bricks;"))
+            # corpus_df = generate_corpus(cursor)  
+            # st.session_state.cursor = cursor
+            # st.session_state.corpus = corpus_df
+            
+            # # Wake up huggingface endpoints
+            # # query({
+            # #         'inputs': {"question": 'wake up?'}
+            # #     })
+            
+            # query_text2sql({
+            #                 'inputs': 'Wake up!'
+            #             }) 
     
     intro_str = """
     You are a chatbot designed to help users learn more about their specific Snowflake or Databricks database and schema. 
