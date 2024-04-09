@@ -186,52 +186,59 @@ def main():
             st.write(message["content"])
     
     if prompt := st.chat_input("Ask a question about your data:"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        # Display user message in chat message container
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        # Display assitant message in chat message container
-        # Generate a new response if last message is not from assistant
-        if st.session_state.messages[-1]["role"] != "assistant":
-            if '!sql' in prompt.lower():
-                #Text2SQL
-                with st.chat_message("assistant", avatar="🐲"):
-                    with st.spinner("Thinking..."):
-                        output = query_text2sql({
-                            'inputs': f'''
-                                "Schema": {st.session_state.gensql_str},
-                                "Question": f'{prompt[4:]}'
-                            '''
-                        }) 
-                        response = output[0]['generated_text'].split('\n')[-1] 
-                        st.write(f'I am running this SQL statement in response to your query: \n {response}') 
-                        st.session_state.cursor.execute(response)
-                        st.write(str(st.session_state.cursor.fetchall()))
-                message = {"role": "assistant", "content": response}
-            else:
-                with st.chat_message("assistant", avatar="🐲"):
-                    with st.spinner("Thinking..."):
-                        context = semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 5)
-                        # get all but user's prompt
-                        injected_prompt_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:-1]]
-                        injected_prompt_messages.append({"role": "user", "content": f"Given {context}, {prompt}"})
-                        r = OpenAI().chat.completions.create(
-                            messages=injected_prompt_messages, 
-                            model="gpt-3.5-turbo",
-                        )
-                        response = r.choices[0].message.content
-                        
-                        # output = query({
-                        #     'inputs': {
-                        #         "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
-                        #         "question": f'{prompt}'
-                        #     }
-                        # }) 
-                        #response = output['answer'] 
-                        st.write(f'{response}') 
-                message = {"role": "assistant", "content": response}
-            # Add assistant response to chat history
-            st.session_state.messages.append(message)
+        try:
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            # Display user message in chat message container
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            # Display assitant message in chat message container
+            # Generate a new response if last message is not from assistant
+            if st.session_state.messages[-1]["role"] != "assistant":
+                if '!sql' in prompt.lower():
+                    #Text2SQL
+                    with st.chat_message("assistant", avatar="🐲"):
+                        with st.spinner("Thinking..."):
+                            output = query_text2sql({
+                                'inputs': f'''
+                                    "Schema": {st.session_state.gensql_str},
+                                    "Question": f'{prompt[4:]}'
+                                '''
+                            }) 
+                            response = output[0]['generated_text'].split('\n')[-1] 
+                            st.write(f'I am running this SQL statement in response to your query: \n {response}') 
+                            st.session_state.cursor.execute(response)
+                            st.write(str(st.session_state.cursor.fetchall()))
+                    message = {"role": "assistant", "content": response}
+                else:
+                    with st.chat_message("assistant", avatar="🐲"):
+                        with st.spinner("Thinking..."):
+                            context = semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 5)
+                            # get all but user's prompt
+                            injected_prompt_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:-1]]
+                            injected_prompt_messages.append({"role": "user", "content": f"Given {context}, {prompt}"})
+                            r = OpenAI().chat.completions.create(
+                                messages=injected_prompt_messages, 
+                                model="gpt-3.5-turbo",
+                            )
+                            response = r.choices[0].message.content
+                            
+                            # output = query({
+                            #     'inputs': {
+                            #         "context": semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1),
+                            #         "question": f'{prompt}'
+                            #     }
+                            # }) 
+                            #response = output['answer'] 
+                            st.write(f'{response}') 
+                    message = {"role": "assistant", "content": response}
+                # Add assistant response to chat history
+                st.session_state.messages.append(message)
+        
+        except AttributeError as ae:
+            st.error('Please use the menu on the left to connect to your database before asking questions!', icon="🚨")
+        
+        except Exception as e:
+            st.error('Something went wrong...', icon="🔥")
         
 
 # Run the main function
