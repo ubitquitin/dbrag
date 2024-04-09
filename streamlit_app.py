@@ -44,7 +44,7 @@ def connect_to_databricks(hostname, http_path, access_token, catalog, schema):
         access_token = access_token
     )
     conn.cursor().execute(f'USE CATALOG {catalog};')
-    conn.cursor().execute(f'USE SCEHMA {schema};')
+    conn.cursor().execute(f'USE SCHEMA {schema};')
     return conn
 
 
