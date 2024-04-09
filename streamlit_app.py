@@ -157,19 +157,19 @@ def main():
 
             # Create document corpus and embeddings
             cursor = conn.cursor()
-            st.write(cursor.execute("Select * from hive_metastore.default.bricks;"))
-            # corpus_df = generate_corpus(cursor)  
-            # st.session_state.cursor = cursor
-            # st.session_state.corpus = corpus_df
+
+            corpus_df = generate_corpus(cursor)  
+            st.session_state.cursor = cursor
+            st.session_state.corpus = corpus_df
             
-            # # Wake up huggingface endpoints
-            # # query({
-            # #         'inputs': {"question": 'wake up?'}
-            # #     })
+            # Wake up huggingface endpoints
+            # query({
+            #         'inputs': {"question": 'wake up?'}
+            #     })
             
-            # query_text2sql({
-            #                 'inputs': 'Wake up!'
-            #             }) 
+            query_text2sql({
+                            'inputs': 'Wake up!'
+                        }) 
     
     intro_str = """
     You are a chatbot designed to help users learn more about their specific Snowflake or Databricks database and schema. 
