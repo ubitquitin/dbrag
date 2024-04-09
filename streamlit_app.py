@@ -36,13 +36,15 @@ def connect_to_snowflake(user, password, account, database, warehouse, schema):
     return conn
 
 # Function to connect to Databricks database
-def connect_to_databricks(hostname, http_path, access_token):
+def connect_to_databricks(hostname, http_path, access_token, catalog, schema):
     
     conn = sql.connect(
         server_hostname = hostname,
         http_path = http_path,
         access_token = access_token
     )
+    conn.execute(f'USE CATALOG {catalog};')
+    conn.execute(f'USE SCEHMA {schema};')
     return conn
 
 
@@ -78,6 +80,37 @@ def generate_corpus(cursor, corpus_length=100):
         text_data.append(f"Table {table} has {num_cols} columns.")
         if len(pk) > 0:
             text_data.append(f"{pk} is the primary key of table {table}.")
+            
+    corpus_df = pd.DataFrame(data=text_data, columns=['sentence'])
+    return corpus_df
+
+
+def generate_databricks_corpus(cursor, corpus_length=100):
+    
+    st.session_state.gensql_str = ''
+    text_data = []
+    cursor.execute("SHOW TABLES")
+    tables = [row[1] for row in cursor.fetchall()]
+    text_data.append(f"There are {len(tables)} tables in the schema.\n")
+    table_names = " ".join([i for i in tables])
+    text_data.append(f"The names of the tables are {table_names}")
+
+    for table in tables:
+        st.session_state.gensql_str = st.session_state.gensql_str + f'{table} '
+        num_cols = 0
+        cursor.execute(f"DESCRIBE {table}")
+        results = cursor.fetchall()
+        pk = ''
+        
+        for row in results:
+            num_cols += 1
+            col_name = row[0]
+            col_type = row[1]
+
+            text_data.append(f"Table {table} has a column {col_name} of type {col_type}.") 
+            st.session_state.gensql_str = st.session_state.gensql_str + f'{col_name} {col_type},' 
+                 
+        text_data.append(f"Table {table} has {num_cols} columns.")
             
     corpus_df = pd.DataFrame(data=text_data, columns=['sentence'])
     return corpus_df
@@ -150,15 +183,17 @@ def main():
         hostname = st.sidebar.text_input("JDBC URL")
         http_path = st.sidebar.text_input("HTTP Path")
         access_token = st.sidebar.text_input("Access Token", type="password")
+        catalog = st.sidebar.text_input("Catalog")
+        schema = st.sidebar.text_input("Schema")
 
         if st.sidebar.button("Connect"):
-            conn = connect_to_databricks(hostname, http_path, access_token)
+            conn = connect_to_databricks(hostname, http_path, access_token, catalog, schema)
             st.success("Connected to Databricks")
 
             # Create document corpus and embeddings
             cursor = conn.cursor()
 
-            corpus_df = generate_corpus(cursor)  
+            corpus_df = generate_databricks_corpus(cursor)  
             st.session_state.cursor = cursor
             st.session_state.corpus = corpus_df
             
