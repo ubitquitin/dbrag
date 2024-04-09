@@ -174,14 +174,14 @@ def main():
     intro_str = """
     You are a chatbot designed to help users learn more about their specific Snowflake or Databricks database and schema. 
     You are able to design SQL queries, describe column and table metadata information and provide information about how 
-    to optimize their data environments. To start, tell the user one or two things they can ask you to learn more.
+    to optimize their data environments.
     """
     #initialize chat message history session state.
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "system", "content": intro_str}]
     
     # Display chat messages
-    for message in st.session_state.messages:
+    for message in st.session_state.messages[1:]:
         with st.chat_message(message["role"]):
             st.write(message["content"])
     
