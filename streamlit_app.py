@@ -170,10 +170,15 @@ def main():
                 columns = sql_context.read.jdbc(jdbc_url, f"DESCRIBE TABLE {table}", properties={"user": user, "password": password})
                 for row in columns.collect():
                     st.write(f"- {row['col_name']} | {row['data_type']}")
-                    
+    
+    intro_str = """
+    You are a chatbot designed to help users learn more about their specific Snowflake or Databricks database and schema. 
+    You are able to design SQL queries, describe column and table metadata information and provide information about how 
+    to optimize their data environments. To start, tell the user one or two things they can ask you to learn more.
+    """
     #initialize chat message history session state.
     if "messages" not in st.session_state:
-        st.session_state.messages = []
+        st.session_state.messages = [{"role": "system", "content": intro_str}]
     
     # Display chat messages
     for message in st.session_state.messages:
@@ -206,11 +211,12 @@ def main():
             else:
                 with st.chat_message("assistant", avatar="🐲"):
                     with st.spinner("Thinking..."):
-                        context = semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 1)
+                        context = semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 5)
+                        # get all but user's prompt
                         injected_prompt_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:-1]]
                         injected_prompt_messages.append({"role": "user", "content": f"Given {context}, {prompt}"})
                         r = OpenAI().chat.completions.create(
-                            messages=injected_prompt_messages, #get all but user's prompt
+                            messages=injected_prompt_messages, 
                             model="gpt-3.5-turbo",
                         )
                         response = r.choices[0].message.content
