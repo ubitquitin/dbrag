@@ -118,7 +118,7 @@ def generate_corpus(cursor, database, schema):
         procedure_descriptions[row[1]] = t
     
     query_str = f"""
-    SELECT * FROM \"{database}\".\"{schema}\".PROCEDURES 
+    SELECT * FROM \"{database}\".INFORMATION_SCHEMA.PROCEDURES 
     WHERE PROCEDURE_CATALOG=\"{database}\" AND PROCEDURE_SCHEMA=\"{schema}\";
     """    
     cursor.execute(query_str)
@@ -139,8 +139,8 @@ def generate_corpus(cursor, database, schema):
 
     ### LOAD HISTORY ###
     query_str = f"""
-    SELECT * FROM INFORMATION_SCHEMA.LOAD_HISTORY 
-    WHERE SCHEMA_NAME={schema} LIMIT 100;
+    SELECT * FROM \"{database}\".INFORMATION_SCHEMA.LOAD_HISTORY 
+    WHERE SCHEMA_NAME=\"{schema}\" LIMIT 100;
     """
     cursor.execute(query_str)
     load_history_df = cursor.fetch_pandas_all()
@@ -155,8 +155,8 @@ def generate_corpus(cursor, database, schema):
     
     ### TABLE STORAGE METRICS ###
     query_str = f"""
-    SELECT * FROM INFORMATION_SCHEMA.TABLES 
-    WHERE SCHEMA_NAME={schema} LIMIT 100;"""
+    SELECT * FROM \"{database}\".INFORMATION_SCHEMA.TABLES 
+    WHERE SCHEMA_NAME=\"{schema}\" LIMIT 100;"""
     
     cursor.execute(query_str)
     tables_df = cursor.fetch_pandas_all()
