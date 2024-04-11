@@ -117,10 +117,11 @@ def generate_corpus(cursor, database, schema):
         '''
         procedure_descriptions[row[1]] = t
     
-    query_str = """
-    SELECT * FROM {}.INFORMATION_SCHEMA.PROCEDURES 
-    WHERE PROCEDURE_CATALOG={} AND PROCEDURE_SCHEMA={};
-    """.format(database, database, schema)    
+    full_procedure_view_name = f'{database}.INFORMATION_SCHEMA.PROCEDURES'
+    query_str = f"""
+    SELECT * FROM {full_procedure_view_name} 
+    WHERE PROCEDURE_CATALOG={database} AND PROCEDURE_SCHEMA={schema};
+    """ 
     cursor.execute(query_str)
     for row in cursor.fetchall():
         if row[2] in procedure_descriptions.values():
