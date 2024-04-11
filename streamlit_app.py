@@ -119,60 +119,65 @@ def generate_corpus(cursor, database, schema):
     
     full_procedure_view_name = f'{database}.INFORMATION_SCHEMA.PROCEDURES'
     query_str = f"""
-    SELECT * FROM {full_procedure_view_name} 
-    WHERE PROCEDURE_CATALOG={database} AND PROCEDURE_SCHEMA={schema};
+    SELECT * FROM {full_procedure_view_name}
+    WHERE PROCEDURE_SCHEMA ='{schema}';
     """ 
     cursor.execute(query_str)
-    for row in cursor.fetchall():
-        if row[2] in procedure_descriptions.values():
-            type_procedures.append(row[11])
-            procedure_descriptions[row[2]].append(f''' The procedure returns type {row[5]}. 
-                                                  The procedure is written in the programming language {row[11]}''')
-    
-    for key, value in procedure_descriptions.items():
-        text_data.append(value)
-    lng_counts = Counter(type_procedures)
-    
-    text_data.append(f'The stored procedures are most commonly written in {lng_counts.most_common(1)}')
-    
+    if cursor.rowcount > 0: 
+        for row in cursor.fetchall():
+            if row[2] in procedure_descriptions.values():
+                type_procedures.append(row[11])
+                procedure_descriptions[row[2]].append(f''' The procedure returns type {row[5]}. 
+                                                    The procedure is written in the programming language {row[11]}''')
+        
+        for key, value in procedure_descriptions.items():
+            text_data.append(value)
+        lng_counts = Counter(type_procedures)
+        
+        text_data.append(f'The stored procedures are most commonly written in {lng_counts.most_common(1)}')
+        
     ### USER FUNCTIONS ###
     ### COLUMNS ###
 
     ### LOAD HISTORY ###
+    full_loadhistory_view_name = f'{database}.INFORMATION_SCHEMA.LOAD_HISTORY'
     query_str = f"""
-    SELECT * FROM \"{database}\".INFORMATION_SCHEMA.LOAD_HISTORY 
-    WHERE SCHEMA_NAME=\"{schema}\" LIMIT 100;
+    SELECT * FROM {full_loadhistory_view_name}
+    WHERE SCHEMA_NAME='{schema}' LIMIT 100;
     """
     cursor.execute(query_str)
-    load_history_df = cursor.fetch_pandas_all()
-    if len(load_history_df) < 100:
-        text_data.append(f"There were {len(load_history_df)} files loaded into tables in the past 14 days.")
-    else:
-        text_data.append("There were 100 or more files loaded into tables in the past 14 days.")   
-    
-    text_data.append(f"A total of {load_history_df['row_count'].sum()} rows were loaded into tables.")
-    text_data.append(f"On average, {load_history_df['row_count'].sum()/len(load_history_df)} rows per file were loaded into tables.")
-    text_data.append(f"Of the {len(load_history_df)} files, {len(load_history_df[load_history_df['error_count'] > 0])} files had at least 1 error.")
-    
+    if cursor.rowcount > 0: 
+        load_history_df = cursor.fetch_pandas_all()
+        if len(load_history_df) < 100:
+            text_data.append(f"There were {len(load_history_df)} files loaded into tables in the past 14 days.")
+        else:
+            text_data.append("There were 100 or more files loaded into tables in the past 14 days.")   
+        
+        text_data.append(f"A total of {load_history_df['row_count'].sum()} rows were loaded into tables.")
+        text_data.append(f"On average, {load_history_df['row_count'].sum()/len(load_history_df)} rows per file were loaded into tables.")
+        text_data.append(f"Of the {len(load_history_df)} files, {len(load_history_df[load_history_df['error_count'] > 0])} files had at least 1 error.")
+        
     ### TABLE STORAGE METRICS ###
-    query_str = """
-    SELECT * FROM {}.INFORMATION_SCHEMA.TABLES 
-    WHERE SCHEMA_NAME={} LIMIT 100;""".format(database, schema)
+    full_loadhistory_view_name = f'{database}.INFORMATION_SCHEMA.TABLES'
+    query_str = f"""
+    SELECT * FROM {full_loadhistory_view_name}
+    WHERE SCHEMA_NAME='{schema}' LIMIT 100;"""
     
     cursor.execute(query_str)
-    tables_df = cursor.fetch_pandas_all()
-    text_data.append(f"Autoclustering is enabled for {len(tables_df[tables_df['AUTO_CLUSTERING_ON']==True]/len(tables_df))} percent of your tables.")
-    
-    text_data.append(f"{len(tables_df[tables_df['IS_TRANSIENT']==True]/len(tables_df))} percent of your tables are transient.")
+    if cursor.rowcount > 0:
+        tables_df = cursor.fetch_pandas_all()
+        text_data.append(f"Autoclustering is enabled for {len(tables_df[tables_df['AUTO_CLUSTERING_ON']==True]/len(tables_df))} percent of your tables.")
+        
+        text_data.append(f"{len(tables_df[tables_df['IS_TRANSIENT']==True]/len(tables_df))} percent of your tables are transient.")
 
-    
-    largest_table_row = tables_df.iloc[tables_df['BYTES'].idxmax()]
-    text_data.append(f"""The largest table in the database is {largest_table_row['TABLE_NAME']},
-                     with {largest_table_row['BYTES']} bytes over {largest_table_row['ROW_COUNT']} rows.
-                     """)
-    
-    tables_df = tables_df.sort_values(by='BYTES')
-    text_data.append(f"Here are the top 10 tables sorted by their size: {tables_df[['NAME', 'BYTES', 'ROW_COUNT']].head(10)}")
+        
+        largest_table_row = tables_df.iloc[tables_df['BYTES'].idxmax()]
+        text_data.append(f"""The largest table in the database is {largest_table_row['TABLE_NAME']},
+                        with {largest_table_row['BYTES']} bytes over {largest_table_row['ROW_COUNT']} rows.
+                        """)
+        
+        tables_df = tables_df.sort_values(by='BYTES')
+        text_data.append(f"Here are the top 10 tables sorted by their size: {tables_df[['NAME', 'BYTES', 'ROW_COUNT']].head(10)}")
     ### COMMANDS (CLUSTERING DEPTH?)###
     
             
