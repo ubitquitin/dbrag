@@ -2,6 +2,7 @@ import streamlit as st
 import snowflake.connector
 from databricks import sql
 import pandas as pd
+from collections import Counter
 import torch
 from sentence_transformers import SentenceTransformer, util
 
@@ -48,7 +49,7 @@ def connect_to_databricks(hostname, http_path, access_token, catalog, schema):
     return conn
 
 
-def generate_corpus(cursor, corpus_length=100):
+def generate_corpus(cursor, database, schema):
     
     st.session_state.gensql_str = ''
     text_data = []
@@ -58,6 +59,7 @@ def generate_corpus(cursor, corpus_length=100):
     table_names = " ".join([i for i in tables])
     text_data.append(f"The names of the tables are {table_names}")
 
+    ### TABLES ###
     for table in tables:
         st.session_state.gensql_str = st.session_state.gensql_str + f'{table} '
         num_cols = 0
@@ -80,12 +82,92 @@ def generate_corpus(cursor, corpus_length=100):
         text_data.append(f"Table {table} has {num_cols} columns.")
         if len(pk) > 0:
             text_data.append(f"{pk} is the primary key of table {table}.")
+    
+    ### VIEWS ###
+    cursor.execute("SHOW VIEWS")
+    views = [row[1] for row in cursor.fetchall()]
+    text_data.append(f"There are {len(views)} views in the schema.\n")
+    view_names = " ".join([i for i in views])
+    text_data.append(f"The names of the views are {view_names}")
+    
+    for view in views:
+        st.session_state.gensql_str = st.session_state.gensql_str + f'{view} '
+        num_cols = 0
+        cursor.execute(f"DESCRIBE {view}")
+        results = cursor.fetchall()
+        
+        for row in results:
+            num_cols += 1
+            col_name = row[0]
+            col_type = row[1]            
+
+            text_data.append(f"View {view} has a column {col_name} of type {col_type}.") 
+            st.session_state.gensql_str = st.session_state.gensql_str + f'{col_name} {col_type},' 
+                 
+        text_data.append(f"View {view} has {num_cols} columns.")
+    
+    
+    ### PROCEDURES ###
+    procedure_descriptions = {}
+    type_procedures = []
+    cursor.execute("SHOW PROCEDURES")
+    for row in cursor.fetchall():
+        t = f'''The database has a procedure named {row[1]}, that takes in between 
+        {row[6]} and {row[7]} arguments.
+        '''
+        procedure_descriptions[row[1]] = t
+    
+    cursor.execute(f"SELECT * FROM {database}.INFORMATION_SCHEMA.PROCEDURES WHERE PROCEDURE_CATALOG={database} AND PROCEDURE_SCHEMA={schema};")
+    for row in cursor.fetchall():
+        if row[2] in procedure_descriptions.values():
+            type_procedures.append(row[11])
+            procedure_descriptions[row[2]].append(f''' The procedure returns type {row[5]}. 
+                                                  The procedure is written in the programming language {row[11]}''')
+    
+    for key, value in procedure_descriptions.items():
+        text_data.append(value)
+    lng_counts = Counter(type_procedures)
+    
+    text_data.append(f'The stored procedures are most commonly written in {lng_counts.most_common(1)}')
+    
+    ### USER FUNCTIONS ###
+    ### COLUMNS ###
+
+    ### LOAD HISTORY ###
+    cursor.execute(f"SELECT * FROM {database}.INFORMATION_SCHEMA.LOAD_HISTORY WHERE SCHEMA_NAME={schema} LIMIT 100;")
+    load_history_df = cursor.fetch_pandas_all()
+    if len(load_history_df) < 100:
+        text_data.append(f"There were {len(load_history_df)} files loaded into tables in the past 14 days.")
+    else:
+        text_data.append("There were 100 or more files loaded into tables in the past 14 days.")   
+    
+    text_data.append(f"A total of {load_history_df['row_count'].sum()} rows were loaded into tables.")
+    text_data.append(f"On average, {load_history_df['row_count'].sum()/len(load_history_df)} rows per file were loaded into tables.")
+    text_data.append(f"Of the {len(load_history_df)} files, {len(load_history_df[load_history_df['error_count'] > 0])} files had at least 1 error.")
+    
+    ### TABLE STORAGE METRICS ###
+    cursor.execute(f"SELECT * FROM {database}.INFORMATION_SCHEMA.TABLES WHERE SCHEMA_NAME={schema} LIMIT 100;")
+    tables_df = cursor.fetch_pandas_all()
+    text_data.append(f"Autoclustering is enabled for {len(tables_df[tables_df['AUTO_CLUSTERING_ON']==True]/len(tables_df))} percent of your tables.")
+    
+    text_data.append(f"{len(tables_df[tables_df['IS_TRANSIENT']==True]/len(tables_df))} percent of your tables are transient.")
+
+    
+    largest_table_row = tables_df.iloc[tables_df['BYTES'].idxmax()]
+    text_data.append(f"""The largest table in the db is {largest_table_row['TABLE_NAME']},
+                     with {largest_table_row['BYTES']} bytes over {largest_table_row['ROW_COUNT']} rows.
+                     """)
+    
+    tables_df = tables_df.sort_values(by='BYTES')
+    text_data.append(f"Here are the top 10 tables sorted by their size: {tables_df[['NAME', 'BYTES']].head(10)}")
+    ### COMMANDS (CLUSTERING DEPTH?)###
+    
             
     corpus_df = pd.DataFrame(data=text_data, columns=['sentence'])
     return corpus_df
 
 
-def generate_databricks_corpus(cursor, corpus_length=100):
+def generate_databricks_corpus(cursor, database, schema):
     
     st.session_state.gensql_str = ''
     text_data = []
@@ -163,7 +245,7 @@ def main():
 
             # Create document corpus and embeddings
             cursor = conn.cursor()
-            corpus_df = generate_corpus(cursor)  
+            corpus_df = generate_corpus(cursor, database, schema)  
             st.session_state.cursor = cursor
             st.session_state.corpus = corpus_df
             
@@ -193,7 +275,7 @@ def main():
             # Create document corpus and embeddings
             cursor = conn.cursor()
 
-            corpus_df = generate_databricks_corpus(cursor)  
+            corpus_df = generate_databricks_corpus(cursor, database, schema)  
             st.session_state.cursor = cursor
             st.session_state.corpus = corpus_df
             
