@@ -161,7 +161,7 @@ def generate_corpus(cursor, database, schema):
     full_loadhistory_view_name = f'{database}.INFORMATION_SCHEMA.TABLES'
     query_str = f"""
     SELECT * FROM {full_loadhistory_view_name}
-    WHERE SCHEMA_NAME='{schema}' LIMIT 100;"""
+    WHERE TABLE_SCHEMA='{schema}' LIMIT 100;"""
     
     cursor.execute(query_str)
     if cursor.rowcount > 0:
