@@ -118,8 +118,8 @@ def generate_corpus(cursor, database, schema):
         procedure_descriptions[row[1]] = t
     
     query_str = f"""
-    SELECT * FROM INFORMATION_SCHEMA.PROCEDURES 
-    WHERE PROCEDURE_CATALOG={database} AND PROCEDURE_SCHEMA={schema};
+    SELECT * FROM \"{database}\".\"{schema}\".PROCEDURES 
+    WHERE PROCEDURE_CATALOG=\"{database}\" AND PROCEDURE_SCHEMA=\"{schema}\";
     """    
     cursor.execute(query_str)
     for row in cursor.fetchall():
