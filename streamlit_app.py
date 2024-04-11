@@ -118,7 +118,7 @@ def generate_corpus(cursor, database, schema):
         procedure_descriptions[row[1]] = t
     
     query_str = """
-    SELECT * FROM (%s).INFORMATION_SCHEMA.PROCEDURES 
+    SELECT * FROM INFORMATION_SCHEMA.PROCEDURES 
     WHERE PROCEDURE_CATALOG=(%s) AND PROCEDURE_SCHEMA=(%s);
     """
     args = database, database, schema
