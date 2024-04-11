@@ -185,7 +185,7 @@ def generate_corpus(cursor, database, schema):
     return corpus_df
 
 
-def generate_databricks_corpus(cursor, database, schema):
+def generate_databricks_corpus(cursor, catalog, schema):
     
     st.session_state.gensql_str = ''
     text_data = []
@@ -293,7 +293,7 @@ def main():
             # Create document corpus and embeddings
             cursor = conn.cursor()
 
-            corpus_df = generate_databricks_corpus(cursor, database, schema)  
+            corpus_df = generate_databricks_corpus(cursor, catalog, schema)  
             st.session_state.cursor = cursor
             st.session_state.corpus = corpus_df
             
