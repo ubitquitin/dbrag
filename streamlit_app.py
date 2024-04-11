@@ -153,9 +153,9 @@ def generate_corpus(cursor, database, schema):
         else:
             text_data.append("There were 100 or more files loaded into tables in the past 14 days.")   
         
-        text_data.append(f"A total of {load_history_df['row_count'].sum()} rows were loaded into tables.")
-        text_data.append(f"On average, {load_history_df['row_count'].sum()/len(load_history_df)} rows per file were loaded into tables.")
-        text_data.append(f"Of the {len(load_history_df)} files, {len(load_history_df[load_history_df['error_count'] > 0])} files had at least 1 error.")
+        text_data.append(f"A total of {load_history_df['ROW_COUNT'].sum()} rows were loaded into tables.")
+        text_data.append(f"On average, {load_history_df['ROW_COUNT'].sum()/len(load_history_df)} rows per file were loaded into tables.")
+        text_data.append(f"Of the {len(load_history_df)} files, {len(load_history_df[load_history_df['ERROR_COUNT'] > 0])} files had at least 1 error.")
         
     ### TABLE STORAGE METRICS ###
     full_loadhistory_view_name = f'{database}.INFORMATION_SCHEMA.TABLES'
