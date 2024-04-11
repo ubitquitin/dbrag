@@ -117,7 +117,11 @@ def generate_corpus(cursor, database, schema):
         '''
         procedure_descriptions[row[1]] = t
     
-    cursor.execute(f"SELECT * FROM {database}.INFORMATION_SCHEMA.PROCEDURES WHERE PROCEDURE_CATALOG={database} AND PROCEDURE_SCHEMA={schema};")
+    query_str = f"""
+    SELECT * FROM {database}.INFORMATION_SCHEMA.PROCEDURES 
+    WHERE PROCEDURE_CATALOG={database} AND PROCEDURE_SCHEMA={schema};
+    """
+    cursor.execute(query_str)
     for row in cursor.fetchall():
         if row[2] in procedure_descriptions.values():
             type_procedures.append(row[11])
@@ -134,7 +138,11 @@ def generate_corpus(cursor, database, schema):
     ### COLUMNS ###
 
     ### LOAD HISTORY ###
-    cursor.execute(f"SELECT * FROM {database}.INFORMATION_SCHEMA.LOAD_HISTORY WHERE SCHEMA_NAME={schema} LIMIT 100;")
+    query_str = f"""
+    SELECT * FROM {database}.INFORMATION_SCHEMA.LOAD_HISTORY 
+    WHERE SCHEMA_NAME={schema} LIMIT 100;
+    """
+    cursor.execute(query_str)
     load_history_df = cursor.fetch_pandas_all()
     if len(load_history_df) < 100:
         text_data.append(f"There were {len(load_history_df)} files loaded into tables in the past 14 days.")
@@ -146,7 +154,11 @@ def generate_corpus(cursor, database, schema):
     text_data.append(f"Of the {len(load_history_df)} files, {len(load_history_df[load_history_df['error_count'] > 0])} files had at least 1 error.")
     
     ### TABLE STORAGE METRICS ###
-    cursor.execute(f"SELECT * FROM {database}.INFORMATION_SCHEMA.TABLES WHERE SCHEMA_NAME={schema} LIMIT 100;")
+    query_str = f"""
+    SELECT * FROM {database}.INFORMATION_SCHEMA.TABLES 
+    WHERE SCHEMA_NAME={schema} LIMIT 100;"""
+    
+    cursor.execute(query_str)
     tables_df = cursor.fetch_pandas_all()
     text_data.append(f"Autoclustering is enabled for {len(tables_df[tables_df['AUTO_CLUSTERING_ON']==True]/len(tables_df))} percent of your tables.")
     
