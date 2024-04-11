@@ -117,10 +117,10 @@ def generate_corpus(cursor, database, schema):
         '''
         procedure_descriptions[row[1]] = t
     
-    query_str = f"""
-    SELECT * FROM \"{database}\".INFORMATION_SCHEMA.PROCEDURES 
-    WHERE PROCEDURE_CATALOG=\"{database}\" AND PROCEDURE_SCHEMA=\"{schema}\";
-    """    
+    query_str = """
+    SELECT * FROM {}.INFORMATION_SCHEMA.PROCEDURES 
+    WHERE PROCEDURE_CATALOG={} AND PROCEDURE_SCHEMA={};
+    """.format(database, database, schema)    
     cursor.execute(query_str)
     for row in cursor.fetchall():
         if row[2] in procedure_descriptions.values():
@@ -154,9 +154,9 @@ def generate_corpus(cursor, database, schema):
     text_data.append(f"Of the {len(load_history_df)} files, {len(load_history_df[load_history_df['error_count'] > 0])} files had at least 1 error.")
     
     ### TABLE STORAGE METRICS ###
-    query_str = f"""
-    SELECT * FROM \"{database}\".INFORMATION_SCHEMA.TABLES 
-    WHERE SCHEMA_NAME=\"{schema}\" LIMIT 100;"""
+    query_str = """
+    SELECT * FROM {}.INFORMATION_SCHEMA.TABLES 
+    WHERE SCHEMA_NAME={} LIMIT 100;""".format(database, schema)
     
     cursor.execute(query_str)
     tables_df = cursor.fetch_pandas_all()
