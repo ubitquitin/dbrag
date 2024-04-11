@@ -117,13 +117,11 @@ def generate_corpus(cursor, database, schema):
         '''
         procedure_descriptions[row[1]] = t
     
-    query_str = """
+    query_str = f"""
     SELECT * FROM INFORMATION_SCHEMA.PROCEDURES 
-    WHERE PROCEDURE_CATALOG=(%s) AND PROCEDURE_SCHEMA=(%s);
-    """
-    args = database, database, schema
-    
-    cursor.execute(query_str, args)
+    WHERE PROCEDURE_CATALOG={database} AND PROCEDURE_SCHEMA={schema};
+    """    
+    cursor.execute(query_str)
     for row in cursor.fetchall():
         if row[2] in procedure_descriptions.values():
             type_procedures.append(row[11])
@@ -141,7 +139,7 @@ def generate_corpus(cursor, database, schema):
 
     ### LOAD HISTORY ###
     query_str = f"""
-    SELECT * FROM {database}.INFORMATION_SCHEMA.LOAD_HISTORY 
+    SELECT * FROM INFORMATION_SCHEMA.LOAD_HISTORY 
     WHERE SCHEMA_NAME={schema} LIMIT 100;
     """
     cursor.execute(query_str)
@@ -157,7 +155,7 @@ def generate_corpus(cursor, database, schema):
     
     ### TABLE STORAGE METRICS ###
     query_str = f"""
-    SELECT * FROM {database}.INFORMATION_SCHEMA.TABLES 
+    SELECT * FROM INFORMATION_SCHEMA.TABLES 
     WHERE SCHEMA_NAME={schema} LIMIT 100;"""
     
     cursor.execute(query_str)
