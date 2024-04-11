@@ -166,9 +166,9 @@ def generate_corpus(cursor, database, schema):
     cursor.execute(query_str)
     if cursor.rowcount > 0:
         tables_df = cursor.fetch_pandas_all()
-        text_data.append(f"Autoclustering is enabled for {len(tables_df[tables_df['AUTO_CLUSTERING_ON']==True]/len(tables_df))} percent of your tables.")
-        
-        text_data.append(f"{len(tables_df[tables_df['IS_TRANSIENT']==True]/len(tables_df))} percent of your tables are transient.")
+        text_data.append(f"Autoclustering is enabled for {len(tables_df[tables_df['AUTO_CLUSTERING_ON'] == 'YES'])/len(tables_df)} percent of your tables.")
+    
+        text_data.append(f"{len(tables_df[tables_df['IS_TRANSIENT'] == 'YES'])/len(tables_df)} percent of your tables are transient.")
 
         
         largest_table_row = tables_df.iloc[tables_df['BYTES'].idxmax()]
@@ -177,7 +177,7 @@ def generate_corpus(cursor, database, schema):
                         """)
         
         tables_df = tables_df.sort_values(by='BYTES')
-        text_data.append(f"Here are the top 10 tables sorted by their size: {tables_df[['NAME', 'BYTES', 'ROW_COUNT']].head(10)}")
+        text_data.append(f"Here are the top 10 tables sorted by their size: {tables_df[['TABLE_NAME', 'BYTES', 'ROW_COUNT']].head(10)}")
     ### COMMANDS (CLUSTERING DEPTH?)###
     
             
