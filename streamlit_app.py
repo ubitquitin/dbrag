@@ -117,11 +117,13 @@ def generate_corpus(cursor, database, schema):
         '''
         procedure_descriptions[row[1]] = t
     
-    query_str = f"""
-    SELECT * FROM {database}.INFORMATION_SCHEMA.PROCEDURES 
-    WHERE PROCEDURE_CATALOG={database} AND PROCEDURE_SCHEMA={schema};
+    query_str = """
+    SELECT * FROM (%s).INFORMATION_SCHEMA.PROCEDURES 
+    WHERE PROCEDURE_CATALOG=(%s) AND PROCEDURE_SCHEMA=(%s);
     """
-    cursor.execute(query_str)
+    args = database, database, schema
+    
+    cursor.execute(query_str, args)
     for row in cursor.fetchall():
         if row[2] in procedure_descriptions.values():
             type_procedures.append(row[11])
