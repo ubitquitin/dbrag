@@ -154,12 +154,12 @@ def generate_corpus(cursor, database, schema):
 
     
     largest_table_row = tables_df.iloc[tables_df['BYTES'].idxmax()]
-    text_data.append(f"""The largest table in the db is {largest_table_row['TABLE_NAME']},
+    text_data.append(f"""The largest table in the database is {largest_table_row['TABLE_NAME']},
                      with {largest_table_row['BYTES']} bytes over {largest_table_row['ROW_COUNT']} rows.
                      """)
     
     tables_df = tables_df.sort_values(by='BYTES')
-    text_data.append(f"Here are the top 10 tables sorted by their size: {tables_df[['NAME', 'BYTES']].head(10)}")
+    text_data.append(f"Here are the top 10 tables sorted by their size: {tables_df[['NAME', 'BYTES', 'ROW_COUNT']].head(10)}")
     ### COMMANDS (CLUSTERING DEPTH?)###
     
             
@@ -329,10 +329,11 @@ def main():
                 else:
                     with st.chat_message("assistant", avatar="🐲"):
                         with st.spinner("Thinking..."):
-                            context = semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 5)
+                            context = semantic_search(st.session_state.embedding_model, prompt, st.session_state.corpus, 10)
+                            #print(context)
                             # get all but user's prompt
                             injected_prompt_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:-1]]
-                            injected_prompt_messages.append({"role": "user", "content": f"Given {context}, {prompt}"})
+                            injected_prompt_messages.append({"role": "user", "content": f"Given these facts about the database: {context}. {prompt}"})
                             r = OpenAI().chat.completions.create(
                                 messages=injected_prompt_messages, 
                                 model="gpt-3.5-turbo",
